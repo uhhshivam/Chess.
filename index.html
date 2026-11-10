@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1220">
+<meta name="description" content="Learn chess with free lessons, an interactive board, opening guides and progress tracking.">
+<title>ChessMaster | Learn. Practice. Improve.</title>
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+<style>
+:root {
+  --bg:#0b1220;
+  --panel:#121e31;
+  --line:#293a55;
+  --txt:#f4f6fb;
+  --muted:#a2afc1;
+  --gold:#e8c273;
+  --green:#6bd0a0;
+}
+
+* {
+  box-sizing:border-box;
+}
+
+html {
+  scroll-behavior:smooth;
+}
+
+body {
+  margin:0;
+  background:radial-gradient(ellipse at 80% -10%,#263b5b 0,transparent 36%),var(--bg);
+  color:var(--txt);
+  font:15px "DM Sans",sans-serif;
+  line-height:1.55;
+}
+
+.wrap {
+  max-width:1160px;
+  margin:auto;
+  padding:0 22px;
+}
+
+.top {
+  height:72px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;
+  top:0;
+  z-index:5;
+  background:#0b1220ed;
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid #ffffff14;
+  padding:0 max(22px,calc((100vw - 1160px)/2));
+}
+
+.brand {
+  color:white;
+  text-decoration:none;
+  font:800 21px Manrope;
+}
+
+.brand b {
+  color:var(--gold);
+}
+
+.brand i {
+  font-style:normal;
+  color:#172033;
+  background:var(--gold);
+  border-radius:10px;
+  padding:5px 9px;
+  margin-right:8px;
+}
+
+nav {
+  display:flex;
+  gap:24px;
+  align-items:center;
+}
+
+nav a {
+  color:var(--muted);
+  text-decoration:none;
+  font-size:13px;
+  font-weight:700;
+}
+
+nav a:hover {
+  color:var(--gold);
+}
+
+.btn {
+  display:inline-block;
+  border:0;
+  border-radius:10px;
+  padding:11px 17px;
+  background:linear-gradient(135deg,#f3d99e,var(--gold));
+  color:#172033;
+  text-decoration:none;
+  font-weight:800;
+  font-size:13px;
+  cursor:pointer;
+}
+
+.outline {
+  background:#ffffff0b;
+  color:white;
+  border:1px solid var(--line);
+}
+
+.menu {
+  display:none;
+  background:none;
+  color:white;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:8px;
+}
+
+.hero {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:40px;
+  align-items:center;
+  padding:70px 0 45px;
+}
+
+.eyebrow {
+  color:var(--gold);
+  font-size:11px;
+  letter-spacing:2px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+
+.hero h1 {
+  font:800 clamp(42px,6vw,67px)/1.05 Manrope;
+  letter-spacing:-2px;
+  margin:15px 0;
+}
+
+.hero h1 span {
+  color:var(--gold);
+}
+
+.hero p,.muted {
+  color:var(--muted);
+}
+
+.hero p {
+  max-width:510px;
+}
+
+.actions {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:24px;
+}
+
+.note {
+  font-size:11px;
+  color:var(--muted);
+  margin-top:14px;
+}
+
+.showcase {
+  background:linear-gradient(145deg,#1b2b44,#101a2a);
+  border:1px solid #ffffff20;
+  border-radius:23px;
+  padding:18px;
+  box-shadow:0 20px 55px #0005;
+}
+
+.showhead {
+  display:flex;
+  justify-content:space-between;
+  color:var(--muted);
+  font-size:11px;
+  margin-bottom:13px;
+}
+
+.board {
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  aspect-ratio:1;
+  border:5px solid #293a55;
+  border-radius:9px;
+  overflow:hidden;
+}
+
+.sq {
+  border:0;
+  padding:0;
+  aspect-ratio:1;
+  display:grid;
+  place-items:center;
+  font-size:clamp(23px,4.8vw,45px);
+  line-height:1;
+  position:relative;
+  cursor:pointer;
+}
+
+.light {
+  background:#e9dfc9;
+}
+
+.dark {
+  background:#789078;
+}
+
+.sq.sel {
+  box-shadow:inset 0 0 0 4px #e9bd55;
+}
+
+.sq.target:after {
+  content:"";
+  width:23%;
+  height:23%;
+  border-radius:50%;
+  background:#142a;
+  position:absolute;
+}
+
+.sq.capture:after {
+  content:"";
+  position:absolute;
+  inset:3px;
+  border:4px solid #142a;
+  border-radius:50%;
+}
+
+.sq.last {
+  background-image:linear-gradient(#e8c27355,#e8c27355);
+}
+
+.stats {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin:12px 0 48px;
+}
+
+.stat,.card,.gamebox,.side,.progress {
+  background:linear-gradient(145deg,#15243a,#101a2a);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:18px;
+}
+
+.stat strong {
+  display:block;
+  color:var(--gold);
+  font:800 24px Manrope;
+}
+
+.stat span {
+  font-size:11px;
+  color:var(--muted);
+}
+
+section {
+  scroll-margin-top:88px;
+}
+
+.section {
+  padding:30px 0 48px;
+}
+
+.head {
+  margin-bottom:20px;
+}
+
+.head h2 {
+  font:700 29px Manrope;
+  margin:4px 0;
+}
+
+.head p {
+  font-size:13px;
+  color:var(--muted);
+  margin:0;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+}
+
+.ico {
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  background:#e8c27319;
+  color:var(--gold);
+  font-size:22px;
+  margin-bottom:13px;
+}
+
+.card h3,.side h3 {
+  font:700 16px Manrope;
+  margin:0 0 7px;
+}
+
+.card p,.side p {
+  font-size:12px;
+  color:var(--muted);
+}
+
+.link {
+  border:0;
+  background:none;
+  color:var(--gold);
+  padding:0;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.practice {
+  display:grid;
+  grid-template-columns:1.05fr .95fr;
+  gap:18px;
+}
+
+.gamebox {
+  padding:16px;
+}
+
+.gamehead {
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:12px;
+  font-weight:700;
+}
+
+.turn {
+  font-size:11px;
+  color:var(--gold);
+  background:#e8c27318;
+  padding:5px 9px;
+  border-radius:20px;
+}
+
+.board .sq {
+  width:100%;
+}
+
+.boardcoords {
+  display:flex;
+  justify-content:space-between;
+  color:var(--muted);
+  font-size:10px;
+  padding:6px 3px;
+}
+
+.tools {
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+
+.tool {
+  border:1px solid var(--line);
+  background:#ffffff09;
+  color:white;
+  padding:8px 10px;
+  border-radius:8px;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.tool.gold {
+  background:var(--gold);
+  color:#172033;
+  border-color:var(--gold);
+}
+
+.message {
+  font-size:12px;
+  color:var(--muted);
+  min-height:38px;
+  margin-top:10px;
+}
+
+.stack {
+  display:grid;
+  gap:12px;
+}
+
+.side {
+  padding:17px;
+}
+
+.moves {
+  font-size:12px;
+  color:var(--muted);
+  max-height:130px;
+  overflow:auto;
+}
+
+.moves b {
+  color:var(--gold);
+}
+
+.lessons,.openings {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+}
+
+.lesson {
+  display:flex;
+  gap:12px;
+  padding:15px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:#ffffff08;
+}
+
+.num {
+  background:#e8c27320;
+  color:var(--gold);
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+  flex-shrink:0;
+  font-weight:800;
+}
+
+.lesson h3,.opening h3 {
+  margin:0 0 4px;
+  font-size:13px;
+}
+
+.lesson p,.opening p {
+  margin:0;
+  color:var(--muted);
+  font-size:11px;
+}
+
+.opening {
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#121e31;
+}
+
+.opening code {
+  display:block;
+  color:var(--gold);
+  font-size:11px;
+  margin:8px 0;
+}
+
+.progressgrid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+
+.big {
+  font:800 34px Manrope;
+  color:var(--gold);
+}
+
+.premium {
+  padding:24px;
+  border:1px solid #92774688;
+  border-radius:18px;
+  background:linear-gradient(120deg,#1d2d45,#292b37);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+}
+
+.premium h2 {
+  font:700 23px Manrope;
+  margin:5px 0;
+}
+
+.premium p {
+  font-size:12px;
+  color:var(--muted);
+  max-width:650px;
+}
+
+.tiny {
+  font-size:10px;
+  color:#8998ac;
+}
+
+.footer {
+  border-top:1px solid #ffffff16;
+  padding:25px 0 35px;
+  color:var(--muted);
+  font-size:11px;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.footer a {
+  color:var(--gold);
+  text-decoration:none;
+}
+
+.modalbg {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#000b;
+  z-index:10;
+  place-items:center;
+  padding:18px;
+}
+
+.modalbg.show {
+  display:grid;
+}
+
+.modal {
+  max-width:460px;
+  width:100%;
+  padding:23px;
+  border-radius:17px;
+  background:#17263d;
+  border:1px solid var(--line);
+}
+
+.modal h3 {
+  font:700 20px Manrope;
+}
+
+.modal p {
+  font-size:13px;
+  color:var(--muted);
+}
+
+.toast {
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translate(-50%,20px);
+  opacity:0;
+  background:var(--gold);
+  color:#172033;
+  padding:10px 16px;
+  border-radius:10px;
+  font-size:12px;
+  font-weight:800;
+  transition:.2s;
+  z-index:20;
+}
+
+.toast.show {
+  opacity:1;
+  transform:translate(-50%,0);
+}
+
+@media(max-width:800px) {
+  .hero {
+    grid-template-columns:1fr;
+  }
+  .showcase {
+    max-width:520px;
+    width:100%;
+    margin:auto;
+  }
+  .practice {
+    grid-template-columns:1fr;
+  }
+  .grid {
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+
+@media(max-width:570px) {
+  .wrap {
+    padding:0 15px;
+  }
+  .top {
+    padding:0 15px;
+    height:64px;
+  }
+  .menu {
+    display:block;
+  }
+  nav {
+    display:none;
+    position:absolute;
+    top:63px;
+    left:0;
+    right:0;
+    padding:18px;
+    background:#121e31;
+    flex-direction:column;
+    align-items:flex-start;
+  }
+  nav.open {
+    display:flex;
+  }
+  .hero {
+    padding:42px 0 25px;
+  }
+  .hero h1 {
+    font-size:43px;
+  }
+  .stats {
+    gap:7px;
+  }
+  .stat {
+    padding:11px;
+  }
+  .stat strong {
+    font-size:19px;
+  }
+  .stat span {
+    font-size:10px;
+  }
+  .grid,.lessons,.openings,.progressgrid {
+    grid-template-columns:1fr;
+  }
+  .head h2 {
+    font-size:25px;
+  }
+  .premium {
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .sq {
+    font-size:clamp(23px,8vw,42px);
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="#">
+    <i>♞</i>Chess<b>Master</b>
+  </a>
+
+  <button class="menu" id="menu">☰</button>
+
+  <nav id="nav">
+    <a href="#learn">Learn</a>
+    <a href="#play">Practice</a>
+    <a href="#openings">Openings</a>
+    <a href="#progress">Progress</a>
+    <a class="btn" href="#play">Start training</a>
+  </nav>
+</header>
+
+<main class="wrap">
+
+<section class="hero">
+
+  <div>
+    <div class="eyebrow">Your next move starts here</div>
+
+    <h1>
+      Think sharper.<br>
+      <span>Play stronger.</span>
+    </h1>
+
+    <p>
+      Build real chess skills with bite-sized lessons,
+      tactical practice and an interactive board.
+      Start as a beginner and improve one move at a time.
+    </p>
+
+    <div class="actions">
+      <a class="btn" href="#play">Start playing ♟</a>
+      <a class="btn outline" href="#learn">Explore lessons</a>
+    </div>
+
+    <div class="note">
+      Free to use · No account required ·
+      Progress saved on this device
+    </div>
+  </div>
+
+  <div class="showcase">
+
+    <div class="showhead">
+      <span>● CHESS TRAINING</span>
+      <span>STRATEGY · FOCUS · PATIENCE</span>
+    </div>
+
+    <div class="board" id="heroBoard"></div>
+
+    <div class="showhead" style="margin:12px 2px 0">
+      <span>Every master was once a beginner.</span>
+      <span>♛</span>
+    </div>
+
+  </div>
+</section>
+
+<div class="stats">
+
+  <div class="stat">
+    <strong>♟ 6</strong>
+    <span>Chess piece types</span>
+  </div>
+
+  <div class="stat">
+    <strong>∞</strong>
+    <span>Ways to improve</span>
+  </div>
+
+  <div class="stat">
+    <strong id="winsStat">0</strong>
+    <span>Games completed</span>
+  </div>
+
+</div>
+
+<!-- LEARNING SECTION -->
+
+<section class="section" id="learn">
+
+  <div class="head">
+    <div class="eyebrow">Build your foundation</div>
+    <h2>Your chess training room</h2>
+    <p>Learn the essentials, then put them into practice.</p>
+  </div>
+
+  <div class="grid">
+
+    <article class="card">
+      <div class="ico">♙</div>
+      <h3>Chess fundamentals</h3>
+      <p>
+        Understand piece movement, check,
+        checkmate, castling and promotion.
+      </p>
+      <button class="link" onclick="lesson('basics')">
+        Explore fundamentals →
+      </button>
+    </article>
+
+    <article class="card">
+      <div class="ico">⚔</div>
+      <h3>Tactics & patterns</h3>
+      <p>
+        Discover forks, pins, skewers
+        and discovered attacks.
+      </p>
+      <button class="link" onclick="lesson('tactics')">
+        Explore tactics →
+      </button>
+    </article>
+
+    <article class="card">
+      <div class="ico">♜</div>
+      <h3>Endgame basics</h3>
+      <p>
+        Learn king activity, pawn promotion
+        and opposition.
+      </p>
+      <button class="link" onclick="lesson('endgame')">
+        Explore endgames →
+      </button>
+    </article>
+
+  </div>
+</section>
+
+<!-- CHESS PRACTICE -->
+
+<section class="section" id="play">
+
+  <div class="head">
+    <div class="eyebrow">Hands-on practice</div>
+    <h2>Practice on the board</h2>
+    <p>
+      Play both sides. The board checks legal moves
+      and highlights available squares.
+    </p>
+  </div>
+
+  <div class="practice">
+
+    <div class="gamebox">
+
+      <div class="gamehead">
+        <span>Practice board</span>
+        <span class="turn" id="turn">White to move</span>
+      </div>
+
+      <div class="board" id="chessBoard"
+           aria-label="Interactive chessboard">
+      </div>
+
+      <div class="boardcoords">
+        <span>a&nbsp; b&nbsp; c&nbsp; d&nbsp; e&nbsp; f&nbsp; g&nbsp; h</span>
+        <span id="sideLabel">White side</span>
+      </div>
+
+      <div class="tools">
+
+        <button class="tool gold" id="new">
+          New game
+        </button>
+
+        <button class="tool" id="undo">
+          Undo move
+        </button>
+
+        <button class="tool" id="flip">
+          Flip board
+        </button>
+
+        <button class="tool" id="hint">
+          Hint
+        </button>
+
+      </div>
+
+      <div class="message" id="message" aria-live="polite">
+        Select a piece, then choose a highlighted square.
+      </div>
+
+    </div>
+
+    <div class="stack">
+
+      <div class="side">
+        <h3>Move history</h3>
+        <div class="moves" id="history">
+          Your moves will appear here.
+        </div>
+      </div>
+
+      <div class="side">
+        <h3>Daily thinking habit</h3>
+        <p>
+          Before every move, check for checks, captures
+          and threats for both sides. This simple routine
+          can help reduce blunders.
+        </p>
+      </div>
+
+      <div class="side">
+        <h3>Practice challenge</h3>
+        <p>
+          Play a complete game against yourself.
+          Try to develop your pieces, control the center
+          and keep your king safe.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- OPENING ACADEMY -->
+
+<section class="section" id="openings">
+
+  <div class="head">
+    <div class="eyebrow">Opening academy</div>
+    <h2>Three openings to explore</h2>
+    <p>
+      These are introductory move ideas,
+      not a complete opening repertoire.
+    </p>
+  </div>
+
+  <div class="openings">
+
+    <article class="opening">
+      <h3>London System</h3>
+      <code>1. d4 · 2. Bf4 · 3. e3</code>
+      <p>
+        A flexible setup for White.
+        Develop smoothly and support the center.
+      </p>
+    </article>
+
+    <article class="opening">
+      <h3>Italian Game</h3>
+      <code>1. e4 e5 · 2. Nf3 Nc6 · 3. Bc4</code>
+      <p>
+        Develop toward the center and put
+        pressure near f7.
+      </p>
+    </article>
+
+    <article class="opening">
+      <h3>Sicilian Defense</h3>
+      <code>1. e4 c5</code>
+      <p>
+        An ambitious response to 1.e4 that
+        fights for the center asymmetrically.
+      </p>
+    </article>
+
+    <article class="opening">
+      <h3>Queen's Gambit</h3>
+      <code>1. d4 d5 · 2. c4</code>
+      <p>
+        White challenges Black's central pawn
+        and seeks active development.
+      </p>
+    </article>
+
+  </div>
+</section>
+
+<!-- LESSON PATH -->
+
+<section class="section">
+
+  <div class="head">
+    <div class="eyebrow">Your learning path</div>
+    <h2>Small lessons, stronger habits</h2>
+    <p>
+      A simple sequence for building
+      reliable chess fundamentals.
+    </p>
+  </div>
+
+  <div class="lessons">
+
+    <div class="lesson">
+      <div class="num">01</div>
+      <div>
+        <h3>Know the pieces</h3>
+        <p>Learn movement, value and special rules.</p>
+      </div>
+    </div>
+
+    <div class="lesson">
+      <div class="num">02</div>
+      <div>
+        <h3>Control the center</h3>
+        <p>Understand why central squares matter.</p>
+      </div>
+    </div>
+
+    <div class="lesson">
+      <div class="num">03</div>
+      <div>
+        <h3>Develop and castle</h3>
+        <p>Bring pieces into play and protect your king.</p>
+      </div>
+    </div>
+
+    <div class="lesson">
+      <div class="num">04</div>
+      <div>
+        <h3>Look for tactics</h3>
+        <p>Scan for checks, captures and threats.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- PROGRESS -->
+
+<section class="section" id="progress">
+
+  <div class="head">
+    <div class="eyebrow">Keep getting better</div>
+    <h2>Your progress</h2>
+    <p>
+      Activity is stored locally in this browser
+      on this device.
+    </p>
+  </div>
+
+  <div class="progressgrid">
+
+    <div class="progress">
+      <div class="eyebrow">Games started</div>
+      <div class="big" id="games">0</div>
+    </div>
+
+    <div class="progress">
+      <div class="eyebrow">Moves played</div>
+      <div class="big" id="moves">0</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FUTURE PREMIUM SECTION -->
+
+<section class="section">
+
+  <div class="premium">
+
+    <div>
+      <div class="eyebrow">Future upgrade</div>
+
+      <h2>ChessMaster Pro</h2>
+
+      <p>
+        Structured courses, guided training plans
+        and deeper game analysis could become
+        premium features later. The current
+        practice tools are free.
+      </p>
+
+      <div class="tiny">
+        No payment is collected here.
+        Premium membership is not active yet.
+      </div>
+    </div>
+
+    <a class="btn" href="#learn">
+      Explore free lessons
+    </a>
+
+  </div>
+
+</section>
+
+</main>
+
+<footer class="wrap footer">
+
+  <span>
+    © <span id="year"></span> ChessMaster.
+    Learn one move at a time.
+  </span>
+
+  <span>
+    <a href="#learn">Lessons</a> ·
+    <a href="#play">Practice</a> ·
+    <a href="#progress">Progress</a>
+  </span>
+
+  <span>Made for chess learners.</span>
+
+</footer>
+
+<!-- LESSON POPUP -->
+
+<div class="modalbg" id="modal">
+
+  <div class="modal">
+
+    <div class="eyebrow">Chess lesson</div>
+
+    <h3 id="modalTitle"></h3>
+
+    <p id="modalText"></p>
+
+    <button class="btn" id="close">
+      Got it
+    </button>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const $ = id => document.getElementById(id);
+
+const glyph = {
+  w: {
+    k:"♔", q:"♕", r:"♖",
+    b:"♗", n:"♘", p:"♙"
+  },
+  b: {
+    k:"♚", q:"♛", r:"♜",
+    b:"♝", n:"♞", p:"♟"
+  }
+};
+
+let game = null;
+let selected = null;
+let targets = [];
+let flipped = false;
+
+let stats = readStats();
+
+function readStats() {
+  try {
+    return JSON.parse(localStorage.getItem("cm-progress"))
+      || {games:0,moves:0,wins:0};
+  } catch(e) {
+    return {games:0,moves:0,wins:0};
+  }
+}
+
+function save() {
+  localStorage.setItem(
+    "cm-progress",
+    JSON.stringify(stats)
+  );
+
+  $("games").textContent = stats.games;
+  $("moves").textContent = stats.moves;
+  $("winsStat").textContent = stats.wins;
+}
+
+function start() {
+  game = new Chess();
+
+  selected = null;
+  targets = [];
+
+  stats.games++;
+  save();
+
+  draw();
+  history();
+  turn();
+
+  $("message").textContent =
+    "New game. White moves first. Select a piece to see legal moves.";
+}
+
+function name(r,c) {
+  return "abcdefgh"[c] + (8-r);
+}
+
+function draw() {
+  if (!game) return;
+
+  const el = $("chessBoard");
+  el.innerHTML = "";
+
+  const rows = flipped
+    ? [7,6,5,4,3,2,1,0]
+    : [0,1,2,3,4,5,6,7];
+
+  const cols = flipped
+    ? [7,6,5,4,3,2,1,0]
+    : [0,1,2,3,4,5,6,7];
+
+  const last = game.history({verbose:true}).slice(-1)[0];
+
+  rows.forEach(r => {
+    cols.forEach(c => {
+
+      const s = name(r,c);
+      const p = game.get(s);
+
+      const b = document.createElement("button");
+
+      b.className =
+        "sq " + ((r+c)%2===0 ? "light" : "dark");
+
+      if (selected === s) {
+        b.classList.add("sel");
+      }
+
+      if (targets.includes(s)) {
+        b.classList.add(p ? "capture" : "target");
+      }
+
+      if (last && (last.from===s || last.to===s)) {
+        b.classList.add("last");
+      }
+
+      b.textContent = p
+        ? glyph[p.color][p.type]
+        : "";
+
+      b.setAttribute(
+        "aria-label",
+        s + (p ? " " + p.color + " " + p.type : "")
+      );
+
+      b.onclick = () => tap(s);
+
+      el.appendChild(b);
+
+    });
+  });
+
+  $("sideLabel").textContent =
+    flipped ? "Black side" : "White side";
+}
+
+function tap(s) {
+
+  if (game.game_over()) {
+    toast("Game over. Start a new game.");
+    return;
+  }
+
+  const p = game.get(s);
+
+  if (selected && targets.includes(s)) {
+
+    let m = null;
+
+    try {
+      m = game.move({
+        from:selected,
+        to:s,
+        promotion:"q"
+      });
+    } catch(e) {}
+
+    if (m) {
+
+      stats.moves++;
+      save();
+
+      selected = null;
+      targets = [];
+
+      draw();
+      history();
+      turn();
+
+      $("message").textContent =
+        game.in_checkmate()
+        ? "Checkmate! Game over."
+        : game.in_check()
+        ? "Check! A king is under attack."
+        : "Played " + m.san + ". Continue with the other side.";
+
+      if (game.game_over()) {
+        stats.wins++;
+        save();
+        toast("Game complete! Good practice.");
+      }
+
+      return;
+    }
+  }
+
+  if (p && p.color === game.turn()) {
+
+    selected = s;
+
+    targets = game.moves({
+      square:s,
+      verbose:true
+    }).map(x => x.to);
+
+    $("message").textContent =
+      targets.length
+      ? "Choose a highlighted square."
+      : "No legal moves for this piece.";
+
+  } else {
+
+    selected = null;
+    targets = [];
+
+  }
+
+  draw();
+}
+
+function turn() {
+
+  let t = game.turn() === "w"
+    ? "White to move"
+    : "Black to move";
+
+  if (game.in_checkmate()) {
+    t = "Checkmate";
+  } else if (game.in_draw()) {
+    t = "Draw";
+  } else if (game.in_check()) {
+    t += " · Check";
+  }
+
+  $("turn").textContent = t;
+}
+
+function history() {
+
+  const h = game.history();
+  let out = "";
+
+  for (let i=0; i<h.length; i+=2) {
+
+    out += `
+      <span>
+        <b>${Math.floor(i/2)+1}.</b>
+        ${h[i]} ${h[i+1] || ""}
+      </span>
+    `;
+  }
+
+  $("history").innerHTML =
+    out || "Your moves will appear here.";
+}
+
+function undo() {
+
+  if (!game.history().length) {
+    toast("No moves to undo.");
+    return;
+  }
+
+  game.undo();
+
+  stats.moves = Math.max(0,stats.moves-1);
+  save();
+
+  selected = null;
+  targets = [];
+
+  draw();
+  history();
+  turn();
+
+  $("message").textContent = "Last move undone.";
+}
+
+function hint() {
+
+  const ms = game.moves({verbose:true});
+
+  if (!ms.length) {
+    toast("No legal moves.");
+    return;
+  }
+
+  const m = ms[Math.floor(Math.random()*ms.length)];
+
+  selected = m.from;
+  targets = [m.to];
+
+  draw();
+
+  $("message").textContent =
+    "Suggestion: " + m.from + " to " + m.to +
+    ". This is a random legal move, not an engine evaluation.";
+}
+
+function mini() {
+
+  const a = [
+    "♜","♞","♝","♛","♚","♝","♞","♜",
+    ..."♟".repeat(8),
+    ..." ".repeat(32),
+    ..."♙".repeat(8),
+    "♖","♘","♗","♕","♔","♗","♘","♖"
+  ];
+
+  a.forEach((p,i) => {
+
+    const d = document.createElement("div");
+
+    d.className =
+      "sq " +
+      ((Math.floor(i/8)+i%8)%2===0
+        ? "light"
+        : "dark");
+
+    d.textContent = p.trim();
+
+    $("heroBoard").appendChild(d);
+
+  });
+}
+
+const lessonData = {
+
+  basics: [
+    "Chess fundamentals",
+    "The goal is to checkmate the opponent's king. The king moves one square in any direction; the queen moves along ranks, files and diagonals; rooks move along ranks and files; bishops move diagonally; knights move in an L-shape and can jump; pawns usually move forward and capture diagonally. Special rules include castling, en passant and promotion."
+  ],
+
+  tactics: [
+    "Tactics & patterns",
+    "A fork attacks multiple targets. A pin makes moving a piece dangerous because a valuable piece is behind it. A skewer attacks a valuable piece that may move and expose another target. A discovered attack happens when one piece moves and reveals an attack from another. Look for checks, captures and threats."
+  ],
+
+  endgame: [
+    "Endgame basics",
+    "In many endgames, the king becomes an active piece. Passed pawns may promote. Learn opposition in king-and-pawn endings, keep your king near important pawns, and calculate whether a pawn can safely promote."
+  ]
+
+};
+
+function lesson(k) {
+
+  $("modalTitle").textContent =
+    lessonData[k][0];
+
+  $("modalText").textContent =
+    lessonData[k][1];
+
+  $("modal").classList.add("show");
+}
+
+function toast(s) {
+
+  $("toast").textContent = s;
+
+  $("toast").classList.add("show");
+
+  setTimeout(() => {
+    $("toast").classList.remove("show");
+  },1800);
+
+}
+
+/* BUTTON EVENTS */
+
+$("new").onclick = start;
+
+$("undo").onclick = undo;
+
+$("flip").onclick = () => {
+  flipped = !flipped;
+  draw();
+};
+
+$("hint").onclick = hint;
+
+$("close").onclick = () => {
+  $("modal").classList.remove("show");
+};
+
+$("modal").onclick = e => {
+  if (e.target === $("modal")) {
+    $("modal").classList.remove("show");
+  }
+};
+
+$("menu").onclick = () => {
+  $("nav").classList.toggle("open");
+};
+
+document.querySelectorAll("#nav a").forEach(a => {
+  a.onclick = () => $("nav").classList.remove("open");
+});
+
+/* START WEBSITE */
+
+$("year").textContent = new Date().getFullYear();
+
+mini();
+save();
+
+if (typeof Chess === "function") {
+
+  start();
+
+} else {
+
+  $("message").textContent =
+    "Chess rules library failed to load. Check your internet connection and refresh.";
+
+  $("turn").textContent = "Library unavailable";
+
+}
+</script>
+
+</body>
+</html>
